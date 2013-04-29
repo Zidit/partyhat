@@ -8,7 +8,7 @@
 
 //Make serial connections global
 extern uart debug;
-extern uart xbee;
+extern uart xbeeSerial;
 
 
 extern vec vectors[];
@@ -16,6 +16,7 @@ extern vec vectors[];
 
 
 #define NUMBER_OF_VECTORS 8
+#define ARDUINO_WRAPPER
 
 
 

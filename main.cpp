@@ -3,6 +3,7 @@
 
 
 #include <avr/io.h>
+#include <util/delay.h>
 
 #include "vectors.h"
 #include "animation.h"
@@ -13,11 +14,13 @@
 #include "gamma.h"
 #include "battery.h"
 #include "implementation.h"
+#include "arduinowrapper.h"
+#include "XBee.h"
 
 
-uart xbee(&USARTD0, 9600);
-ISR (USARTD0_RXC_vect){ xbee.rxInterrupt(); }
-ISR (USARTD0_DRE_vect){ xbee.txInterrupt(); }
+uart xbeeSerial(&USARTD0, 57600);
+ISR (USARTD0_RXC_vect){ xbeeSerial.rxInterrupt(); }
+ISR (USARTD0_DRE_vect){ xbeeSerial.txInterrupt(); }
 
 uart debug(&USARTC1, 9600);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
@@ -29,10 +32,18 @@ void test_debug();
 
 void gammaCorrection(led& currentLed);
 void processData(char* data, uint8_t len);
+void xbee_api_callback(ZBRxResponse rx);
+
 
 vec vectors[NUMBER_OF_VECTORS];
+bool runAnimation ;
 
 uint32_t nextFrame;
+
+XBee xbee = XBee();
+XBeeResponse response = XBeeResponse();
+// create reusable response objects for responses we expect to handle
+ZBRxResponse rx = ZBRxResponse();
 
 int main(void)
 {
@@ -56,18 +67,41 @@ int main(void)
 
     debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
+    Stream xbeeStream(xbeeSerial);
+
+    PORTD.DIRSET = PIN4_bm;
+    PORTD.OUTSET = PIN4_bm;
+    _delay_ms(20);
+    PORTD.OUTCLR = PIN4_bm;
+
+    xbee.begin(xbeeStream);
 
     nextFrame = taskManager::getTimeMs() ;
     selectAnimation(1);
+    runAnimation = true;
 
     char data[64];
     uint8_t dataLength = 0;
     uint8_t recivedBytes = 0;
 
     while(1){
-        if(xbee.dataAvailable())
+        xbee.readPacket();
+        if (xbee.getResponse().isAvailable())
         {
-            char c = xbee.getChar();
+            // got something
+            if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE)
+            {
+                // got a zb rx packet
+                xbee.getResponse().getZBRxResponse(rx);
+                xbee_api_callback(rx);
+            }
+        }
+
+
+        // Echo debug characters
+        if(debug.dataAvailable())
+        {
+            char c = debug.getChar();
 
             if(dataLength == 0) dataLength = c;
             else
@@ -82,20 +116,6 @@ int main(void)
                 dataLength = 0;
                 recivedBytes = 0;
             }
-        }
-
-
-        // Echo debug characters
-        if(debug.dataAvailable())
-        {
-            char c;
-            c = debug.getChar();
-            if( c == '0') selectAnimation(0);
-            if( c == '1') selectAnimation(1);
-            if( c == '2') selectAnimation(2);
-            if( c == '3') selectAnimation(3);
-            if( c == '4') selectAnimation(4);
-            debug.sendChar(c);
 
         }
 
@@ -106,7 +126,7 @@ int main(void)
             uint32_t time = taskManager::getTimeMs();
             nextFrame = time + 20;
 
-            updateAnimation(time);
+            if(runAnimation) updateAnimation(time);
 
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
@@ -122,13 +142,13 @@ int main(void)
         /// main loop:
         /// -get data from xbee
         /// -prosess data
-        /// -update vectors in animation handler    DONE
+        /// -update vect"ors in animation handler    DONE
         /// -get rgb values from vectors            DONE
         /// -gamma correction + ect.                DONE
         /// -set rgb values to all leds             REFERENCE IMPLEMENTATION DONE
 
         /// Backgound tasks:
-        /// -batterymonitor                         NOT TESTED
+        /// -batterymonitor                         DONE
 
     }
 
@@ -165,7 +185,7 @@ void processData(char* data, uint8_t len)
     //echo
     case 0x00:
         for (uint8_t i = 1; i < len; i++)
-            xbee.sendChar(data[i]);
+            debug.sendChar(data[i]);
         break;
 
     //Set animation
@@ -187,4 +207,61 @@ void processData(char* data, uint8_t len)
         break;
     }
 
+}
+
+
+void xbee_api_callback(ZBRxResponse rx)
+{
+    // Check first byte
+    debug.sendHex(rx.getData(0));
+    switch(rx.getData(0))
+    {
+        // TODO: Define a sane baseline protocol, for testing we have this dummy RGB setter
+        case 0x0:
+        {
+            TCC0.CCA = rx.getData(3);
+            TCC0.CCB = rx.getData(2);
+            TCC0.CCC = rx.getData(1);
+
+            debug.sendHex(rx.getData(1));
+            debug.sendHex(rx.getData(2));
+            debug.sendHex(rx.getData(3));
+
+            break;
+        }
+        case 0x1:
+        {
+
+            TCC0.CCD = rx.getData(3);
+            TCC1.CCA = rx.getData(1);
+            TCC1.CCB = rx.getData(2);
+            break;
+        }
+        case 0x2:
+        {
+            selectAnimation(rx.getData(1));
+            break;
+        }
+        case 0x3:
+        {
+            runAnimation = true;
+            break;
+        }
+        case 0x4:
+        {
+            runAnimation = false;
+            break;
+        }
+        case 0x5:
+        {
+            selectAnimation(rx.getData(1));
+            runAnimation = true;
+            break;
+        }
+        case 0x58: // Ascii X
+        {
+            // Your extended protocol goes here
+            break;
+        }
+    }
 }

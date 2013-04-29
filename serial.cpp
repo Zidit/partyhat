@@ -49,6 +49,11 @@ uart::uart(USART_t* usart, const uint32_t baud) : reg(usart)
 
 }
 
+void uart::flush()
+{
+    while(!txBuffer.isEmpty());
+}
+
 
 void uart::sendChar(const char c)
 {
