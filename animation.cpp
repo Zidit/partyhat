@@ -1,5 +1,44 @@
 
 #include "animation.h"
+#include <stdlib.h>
+
+
+void animationUpdateRandom(){
+	for(uint8_t i = 0; i < 8; i++){
+    	vectors[i].direction += 2;
+    	vectors[i].r += rand() & 0x03;
+    	vectors[i].g += rand() & 0x03;
+    	vectors[i].b += rand() & 0x03;
+	}
+}
+
+void animationInitRandom(){
+    vectors[0].direction = 32;
+    vectors[0].sector = 4;
+
+    vectors[1].direction = 64;
+    vectors[1].sector = 4;
+
+    vectors[2].direction = 96;
+    vectors[2].sector = 4;
+
+    vectors[3].direction = 0;
+    vectors[3].sector = 4;
+
+    vectors[4].direction = -32;
+    vectors[4].sector = 4;
+
+    vectors[5].direction = -64;
+    vectors[5].sector = 4;
+
+    vectors[6].direction = -96;
+    vectors[6].sector = 4;
+
+    vectors[7].direction = -128;
+    vectors[7].sector = 4;
+
+	srand(12);
+}
 
 
 void animationUpdateDefault(){
@@ -76,6 +115,9 @@ void selectAnimation(const uint8_t id){
     case 2:
         animationInitPolice();
         break;
+    case 3:
+        animationInitRandom();
+        break;
 
     default:
         break;
@@ -93,6 +135,10 @@ void updateAnimation(const uint32_t time){
     case 2:
         animationUpdatePolice();
         break;
+    case 3:
+        animationUpdateRandom();
+        break;
+
 
     default:
         break;

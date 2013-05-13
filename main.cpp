@@ -54,11 +54,14 @@ int main(void)
     //taskManager::registerTask(&test_debug, 100, 0);
 
 
+
+
+
     debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
 
     nextFrame = taskManager::getTimeMs() ;
-    selectAnimation(1);
+    selectAnimation(3);
 
     char data[64];
     uint8_t dataLength = 0;
@@ -188,3 +191,7 @@ void processData(char* data, uint8_t len)
     }
 
 }
+
+
+
+
