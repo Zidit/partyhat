@@ -3,148 +3,173 @@
 #include <stdlib.h>
 
 
-void animationUpdateRandom(){
-	for(uint8_t i = 0; i < 8; i++){
-    	vectors[i].direction += 2;
-    	vectors[i].r += rand() & 0x03;
-    	vectors[i].g += rand() & 0x03;
-    	vectors[i].b += rand() & 0x03;
+uint8_t gp_ram[64];
+
+void ramStore (const uint8_t addr, const uint8_t data)
+{
+	if (addr < 40)
+	{
+		uint8_t* ptr = (uint8_t*)vectors;
+		*(ptr + addr) = data;
 	}
-}
-
-void animationInitRandom(){
-    vectors[0].direction = 32;
-    vectors[0].sector = 4;
-
-    vectors[1].direction = 64;
-    vectors[1].sector = 4;
-
-    vectors[2].direction = 96;
-    vectors[2].sector = 4;
-
-    vectors[3].direction = 0;
-    vectors[3].sector = 4;
-
-    vectors[4].direction = -32;
-    vectors[4].sector = 4;
-
-    vectors[5].direction = -64;
-    vectors[5].sector = 4;
-
-    vectors[6].direction = -96;
-    vectors[6].sector = 4;
-
-    vectors[7].direction = -128;
-    vectors[7].sector = 4;
-
-	srand(12);
-}
-
-
-void animationUpdateDefault(){
-    vectors[0].direction += 1;
-    vectors[1].direction += 2;
-    vectors[2].direction += 3;
-}
-
-void animationInitDefault(){
-    vectors[0].r = 255;
-    vectors[0].g = 0;
-    vectors[0].b = 0;
-    vectors[0].direction = 0;
-    vectors[0].sector = 6;
-
-    vectors[1].r = 0;
-    vectors[1].g = 255;
-    vectors[1].b = 0;
-    vectors[1].direction = 83;
-    vectors[1].sector = 6;
-
-    vectors[2].r = 0;
-    vectors[2].g = 0;
-    vectors[2].b = 255;
-    vectors[2].direction = -83;
-    vectors[2].sector = 6;
-}
-
-void animationUpdatePolice(){
-    static int8_t dir = 15;
-    vectors[0].r += dir;
-    vectors[1].b -= dir;
-    if (vectors[0].r == 0) dir = 15;
-    if (vectors[1].b == 0) dir = -15;
-}
-
-void animationInitPolice(){
-    vectors[0].r = 0;
-    vectors[0].g = 0;
-    vectors[0].b = 0;
-    vectors[0].direction = 0;
-    vectors[0].sector = 7;
-
-    vectors[1].r = 0;
-    vectors[1].g = 0;
-    vectors[1].b = 255;
-    vectors[1].direction = -128;
-    vectors[1].sector = 7;
+	else if (addr < 41)
+	{
+		return srand(data);
+	}
+	else if (addr < 64)
+	{
+		//Reserved to later use
+	} 
+	else if (addr < 128)
+	{
+		//general purpose memory
+		gp_ram[addr - 64] = data;
+	}
 
 }
 
+uint8_t ramLoad (const uint8_t addr)
+{
+	if (addr < 40)
+	{
+		uint8_t* ptr = (uint8_t*)vectors;
+		return *(ptr + addr);
+	}
+	else if (addr < 41)
+	{
+		return rand();
+	}
+	else if (addr < 64)
+	{
+		//Reserved to later use
+		return 0;
+	} 
+	else if (addr < 128)
+	{
+		//general purpose memory
+		return gp_ram[addr - 64];
+	}
 
-
-uint8_t currentAnimation;
-
-
-void selectAnimation(const uint8_t id){
-    currentAnimation = id;
-
-    for (uint8_t i = 0; i < NUMBER_OF_VECTORS; i++){
-        vectors[i].r = 0;
-        vectors[i].g = 0;
-        vectors[i].b = 0;
-        vectors[i].direction = 0;
-        vectors[i].sector = 0;
-    }
-
-
-    switch (currentAnimation){
-    case 1:
-        animationInitDefault();
-        break;
-
-    case 2:
-        animationInitPolice();
-        break;
-    case 3:
-        animationInitRandom();
-        break;
-
-    default:
-        break;
-
-    }
+	return 0;
 }
 
-void updateAnimation(const uint32_t time){
+uint8_t runAnimationCode(uint16_t* code)
+{
 
-    switch (currentAnimation){
-    case 1:
-        animationUpdateDefault();
-        break;
+	uint8_t wdc = 64;
+	static uint8_t PC = 0;	
+	static uint8_t wreg = 0;	
+	static uint8_t carry = 0;
 
-    case 2:
-        animationUpdatePolice();
-        break;
-    case 3:
-        animationUpdateRandom();
-        break;
+	while (wdc--){
 
+		uint8_t opcode = (uint8_t)(code[PC] >> 8);
+		uint8_t data  = (uint8_t)code[PC];
+		uint16_t tmp;
+	
+		PC++;
 
-    default:
-        break;
+		switch (opcode & OPCODE_MASK)
+		{
+		case OPCODE_LOAD_CONST:
+			wreg = data;
+			break;
 
-    }
+		case OPCODE_LOAD_RAM:
+			wreg = ramLoad(data);
+			break;
 
+		case OPCODE_STORE_RAM:
+			ramStore(data, wreg);
+			break;
 
+		case OPCODE_ADD:
+			tmp = ramLoad(data) + wreg;
+			carry = (uint8_t)(tmp >> 8) & 0x01;
+
+			if (opcode & STORE_WREG_MASK)  wreg = (uint8_t)tmp;
+			else ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_SUB:
+			tmp = wreg - ramLoad(data);
+			carry = (uint8_t)(tmp >> 8) & 0x01;
+
+			if (opcode & STORE_WREG_MASK)  wreg = (uint8_t)tmp;
+			else ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_AND:
+			tmp = ramLoad(data) & wreg;
+
+			if (opcode & STORE_WREG_MASK)  wreg = (uint8_t)tmp;
+			else ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCEOE_OR:
+			tmp = ramLoad(data) | wreg;
+
+			if (opcode & STORE_WREG_MASK)  wreg = (uint8_t)tmp;
+			else ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_XOR:
+			tmp = ramLoad(data) ^ wreg;
+
+			if (opcode & STORE_WREG_MASK)  wreg = (uint8_t)tmp;
+			else ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_INC:
+			tmp = ramLoad(data) + 1;
+			carry = (uint8_t)(tmp >> 8) & 0x01;
+			ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_DEC:
+			tmp = ramLoad(data) - 1;
+			carry = (uint8_t)(tmp >> 8) & 0x01;
+			ramStore(data, (uint8_t)tmp);
+			break;
+
+		case OPCODE_SHIFT_R:
+			carry = wreg & 0x01;
+			wreg >>= 1;			
+			break;
+
+		case OPCODE_SHIFT_L:
+			carry = (wreg >> 7) & 0x01;
+			wreg <<= 1;
+			break;
+
+		case OPCODE_RET_M_WREG:
+			return wreg;
+
+		case OPCODE_RET_M_CONST:
+			return data;
+
+		case OPCODE_SIWZ:
+			if (wreg == 0) PC++;
+			break;
+
+		case OPCODE_SIRZ:
+			if (ramLoad(data) == 0) PC++;
+			break;
+
+		case OPCODE_SICZ:
+			if (carry == 0) PC++;
+			break;
+
+		case OPCODE_JUMP:
+			PC = data;
+			break;
+
+		}
+	}
+
+	return 0;
 }
+
+
+
 

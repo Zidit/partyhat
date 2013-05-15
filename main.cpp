@@ -3,6 +3,7 @@
 
 
 #include <avr/io.h>
+#include <stdlib.h>
 
 #include "vectors.h"
 #include "animation.h"
@@ -23,6 +24,11 @@ uart debug(&USARTC1, 9600);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
+uint16_t anim[] = {	0x01FF, 0x0300, 0x0106, 0x0304, 0x0100, 0x0303, 0x0904, 0x1105, 0x1506 };
+
+uint16_t anim2[] = {	0x0100, 0x0303, 0x0153, 0x0308, 0x01AB, 0x030D, 0x0106, 0x0304, 0x0309, 0x030E, 0x01FF, 0x0300, 0x0306, 0x030C, 
+						0x0903, 0x0908, 0x090D, 0x0908, 0x090D, 0x090D, 0x1100, 0x150E};
+
 
 
 void test_debug();
@@ -36,6 +42,7 @@ uint32_t nextFrame;
 
 int main(void)
 {
+	srand(12);
     // Set sys clock to 16 Mhz
     // -if you change this, remember to change F_CUP define too
     set32MHzClock(CLK_PSADIV_2_gc);
@@ -56,12 +63,11 @@ int main(void)
 
 
 
-
     debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
 
     nextFrame = taskManager::getTimeMs() ;
-    selectAnimation(3);
+
 
     char data[64];
     uint8_t dataLength = 0;
@@ -91,14 +97,7 @@ int main(void)
         // Echo debug characters
         if(debug.dataAvailable())
         {
-            char c;
-            c = debug.getChar();
-            if( c == '0') selectAnimation(0);
-            if( c == '1') selectAnimation(1);
-            if( c == '2') selectAnimation(2);
-            if( c == '3') selectAnimation(3);
-            if( c == '4') selectAnimation(4);
-            debug.sendChar(c);
+
 
         }
 
@@ -107,9 +106,9 @@ int main(void)
         if( taskManager::getTimeMs() >= nextFrame)
         {
             uint32_t time = taskManager::getTimeMs();
-            nextFrame = time + 20;
 
-            updateAnimation(time);
+			nextFrame = time + 10 * runAnimationCode(anim2);
+
 
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
@@ -173,7 +172,6 @@ void processData(char* data, uint8_t len)
 
     //Set animation
     case 0x01:
-        selectAnimation(data[1]);
         break;
 
     //set vectors manualy
