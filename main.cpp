@@ -18,7 +18,7 @@
 #include "XBee.h"
 
 
-uart xbeeSerial(&USARTD0, 57600);
+uart xbeeSerial(&USARTD0, 9600);
 ISR (USARTD0_RXC_vect){ xbeeSerial.rxInterrupt(); }
 ISR (USARTD0_DRE_vect){ xbeeSerial.txInterrupt(); }
 
@@ -65,16 +65,19 @@ int main(void)
     //taskManager::registerTask(&test_debug, 100, 0);
 
 
-    debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
+//    debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
     Stream xbeeStream(xbeeSerial);
+    //Stream xbeeStream(debug);
 
     PORTD.DIRSET = PIN4_bm;
-    PORTD.OUTSET = PIN4_bm;
-    _delay_ms(20);
     PORTD.OUTCLR = PIN4_bm;
+    _delay_ms(20);
+    PORTD.OUTSET = PIN4_bm;
 
     xbee.begin(xbeeStream);
+
+
 
     nextFrame = taskManager::getTimeMs() ;
     selectAnimation(1);
@@ -91,6 +94,7 @@ int main(void)
             // got something
             if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE)
             {
+				 runAnimation = false;
                 // got a zb rx packet
                 xbee.getResponse().getZBRxResponse(rx);
                 xbee_api_callback(rx);
@@ -209,6 +213,20 @@ void processData(char* data, uint8_t len)
 
 }
 
+void sendHI()
+{
+		// Create an array for holding the data you want to send.
+	uint8_t payload[] = "Hello World!";
+
+	// Specify the address of the remote XBee (this is the SH + SL)
+	XBeeAddress64 addr64 = XBeeAddress64(0x0013a200, 0x4089EDE8);
+
+	// Create a TX Request
+	ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload));
+
+	// Send your request
+	xbee.send(zbTx);
+}
 
 void xbee_api_callback(ZBRxResponse rx)
 {
@@ -258,6 +276,10 @@ void xbee_api_callback(ZBRxResponse rx)
             runAnimation = true;
             break;
         }
+		case 0x06:
+			sendHI();
+			break;
+		
         case 0x58: // Ascii X
         {
             // Your extended protocol goes here
