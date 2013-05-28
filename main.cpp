@@ -24,10 +24,11 @@ uart debug(&USARTC1, 9600);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
-uint16_t anim[] = {	0x01FF, 0x0300, 0x0106, 0x0304, 0x0100, 0x0303, 0x0904, 0x1105, 0x1506 };
+uint16_t defaultAnimation[] = { 0x1801, 0x0107, 0x0304, 0x0309, 0x030e, 0x0100, 0x0303, 0x0155, 0x0308, 0x01ab, 0x030d, 0x01ff, 0x0300, 0x0307, 0x030b, 0x0101, 0x0403, 0x0408, 0x040d, 0x1102, 0x170f};
 
-uint16_t anim2[] = {	0x0100, 0x0303, 0x0153, 0x0308, 0x01AB, 0x030D, 0x0106, 0x0304, 0x0309, 0x030E, 0x01FF, 0x0300, 0x0306, 0x030C, 
-						0x0903, 0x0908, 0x090D, 0x0908, 0x090D, 0x090D, 0x1100, 0x150E};
+
+
+uint16_t animation[256];
 
 
 
@@ -61,22 +62,20 @@ int main(void)
     //taskManager::registerTask(&test_debug, 100, 0);
 
 
-
-
     debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
 
     nextFrame = taskManager::getTimeMs() ;
 
-
-    char data[64];
     uint8_t dataLength = 0;
     uint8_t recivedBytes = 0;
+
+	uint16_t* currentAnimation = defaultAnimation;
 
     while(1){
         if(xbee.dataAvailable())
         {
-            char c = xbee.getChar();
+         /*   char c = xbee.getChar();
 
             if(dataLength == 0) dataLength = c;
             else
@@ -90,15 +89,29 @@ int main(void)
                 processData(data, dataLength);
                 dataLength = 0;
                 recivedBytes = 0;
-            }
+            }*/
         }
 
 
-        // Echo debug characters
         if(debug.dataAvailable())
         {
+            char c = debug.getChar();
 
+            if(dataLength == 0) dataLength = c;
+            else
+            {
+				uint8_t *ptr = (uint8_t*)animation;
+				ptr[recivedBytes] = c;
+				recivedBytes++;
+            }
 
+            if(dataLength == recivedBytes)
+            {
+				resetPC();
+                currentAnimation = animation;
+                dataLength = 0;
+                recivedBytes = 0;
+            }
         }
 
 
@@ -107,8 +120,7 @@ int main(void)
         {
             uint32_t time = taskManager::getTimeMs();
 
-			nextFrame = time + 10 * runAnimationCode(anim2);
-
+			nextFrame = time + 10 * runAnimationCode(currentAnimation);
 
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
@@ -123,7 +135,7 @@ int main(void)
 
         /// main loop:
         /// -get data from xbee
-        /// -prosess data
+        /// -prosess data							DONE
         /// -update vectors in animation handler    DONE
         /// -get rgb values from vectors            DONE
         /// -gamma correction + ect.                DONE
