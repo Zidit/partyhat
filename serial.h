@@ -35,6 +35,7 @@ public:
 
     char getChar();
     uint8_t dataAvailable();
+    void flush();
     uint8_t setBaudRate(const uint32_t baud);
 
 

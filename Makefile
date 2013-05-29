@@ -84,7 +84,7 @@ SRC =
 
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = $(TARGET).cpp serial.cpp taskmanager.cpp vectors.cpp animation.cpp utils.cpp battery.cpp implementation.cpp
+CPPSRC = $(TARGET).cpp serial.cpp taskmanager.cpp vectors.cpp animation.cpp utils.cpp battery.cpp implementation.cpp XBee.cpp
 
 
 # List Assembler source files here.
