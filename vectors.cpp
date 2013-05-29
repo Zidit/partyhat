@@ -42,7 +42,8 @@ void updateLed(led& current_led, vec* vectors, uint8_t size)
         led temp = current_led;
 
         for (int i = 0; i < size; i++) {
-            if (vectors[i].sector > 0 && vectors[i].sector < 8) {
+			vectors[i].sector &= 0b00000111;		
+            if (vectors[i].sector > 0) {
                 vectorToRGB(vectors[i], temp);
                 r += temp.r;
                 g += temp.g;

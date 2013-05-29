@@ -4,6 +4,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdlib.h>
 
 #include "vectors.h"
 #include "animation.h"
@@ -26,18 +27,20 @@ uart debug(&USARTC1, 9600);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
+uint16_t animationBuffer1[256] = { 0x1801, 0x0107, 0x0304, 0x0309, 0x030e, 0x0100, 0x0303, 0x0155, 
+									0x0308, 0x01ab, 0x030d, 0x01ff, 0x0300, 0x0307, 0x030b, 0x0101, 
+									0x0403, 0x0408, 0x040d, 0x1102, 0x170f};
 
+uint16_t animationBuffer2[256];
 
-void test_debug();
-
-void gammaCorrection(led& currentLed);
-void xbee_api_callback(ZBRxResponse rx);
-
+uint16_t* currentAnimation = animationBuffer1;
+uint16_t* nextAnimation = animationBuffer2;
 
 vec vectors[NUMBER_OF_VECTORS];
-bool runAnimation ;
 
-uint32_t nextFrame;
+void test_debug();
+void gammaCorrection(led& currentLed);
+void xbee_api_callback(ZBRxResponse rx);
 
 XBee xbee = XBee();
 XBeeResponse response = XBeeResponse();
@@ -46,6 +49,7 @@ ZBRxResponse rx = ZBRxResponse();
 
 int main(void)
 {
+	srand(12);
     // Set sys clock to 16 Mhz
     // -if you change this, remember to change F_CUP define too
     set32MHzClock(CLK_PSADIV_2_gc);
@@ -53,7 +57,6 @@ int main(void)
     //Enable all interrupts
     PMIC.CTRL = PMIC_HILVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_LOLVLEN_bm;
 	sei();
-
 
     userImplementationSetup();
 
@@ -64,36 +67,28 @@ int main(void)
     //taskManager::registerTask(&test_debug, 100, 0);
 
 
-
     debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
 
 
     Stream xbeeStream(xbeeSerial);
+    xbee.begin(xbeeStream);
 
     PORTD.DIRSET = PIN4_bm;
     PORTD.OUTCLR = PIN4_bm;
     _delay_ms(20);
     PORTD.OUTSET = PIN4_bm;
 
-    xbee.begin(xbeeStream);
+    uint32_t nextFrame = taskManager::getTimeMs() ;
 
-
-    nextFrame = taskManager::getTimeMs() ;
-    selectAnimation(1);
-    runAnimation = true;
-
-    char data[64];
-    uint8_t dataLength = 0;
-    uint8_t recivedBytes = 0;
 
     while(1){
+
         xbee.readPacket();
         if (xbee.getResponse().isAvailable())
         {
             // got something
             if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE)
             {
-				 runAnimation = false;
                 // got a zb rx packet
                 xbee.getResponse().getZBRxResponse(rx);
                 xbee_api_callback(rx);
@@ -101,35 +96,11 @@ int main(void)
         }
 
 
-        // Echo debug characters
-        if(debug.dataAvailable())
-        {
-            char c = debug.getChar();
-
-            if(dataLength == 0) dataLength = c;
-            else
-            {
-                data[recivedBytes] = c;
-                recivedBytes++;
-            }
-
-            if(dataLength == recivedBytes)
-            {
-                processData(data, dataLength);
-                dataLength = 0;
-                recivedBytes = 0;
-            }
-
-        }
-
-
-
         if( taskManager::getTimeMs() >= nextFrame)
         {
             uint32_t time = taskManager::getTimeMs();
-            nextFrame = time + 20;
 
-            if(runAnimation) updateAnimation(time);
+			nextFrame = time + 10 * runAnimationCode(currentAnimation);
 
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
@@ -144,8 +115,8 @@ int main(void)
 
         /// main loop:
         /// -get data from xbee
-        /// -prosess data
-        /// -update vect"ors in animation handler    DONE
+        /// -prosess data							DONE
+        /// -update vectors in animation handler    DONE
         /// -get rgb values from vectors            DONE
         /// -gamma correction + ect.                DONE
         /// -set rgb values to all leds             REFERENCE IMPLEMENTATION DONE
@@ -193,61 +164,62 @@ void sendHI()
 
 void xbee_api_callback(ZBRxResponse rx)
 {
+	uint16_t* ptr16;
+	uint8_t* ptr8;
+
     // Check first byte
     debug.sendHex(rx.getData(0));
     switch(rx.getData(0))
     {
         // TODO: Define a sane baseline protocol, for testing we have this dummy RGB setter
         case 0x0:
-        {
-            TCC0.CCA = rx.getData(3);
-            TCC0.CCB = rx.getData(2);
-            TCC0.CCC = rx.getData(1);
-
+  
             debug.sendHex(rx.getData(1));
             debug.sendHex(rx.getData(2));
             debug.sendHex(rx.getData(3));
 
             break;
-        }
+ 
         case 0x1:
-        {
+        
+				resetPC();
 
-            TCC0.CCD = rx.getData(3);
-            TCC1.CCA = rx.getData(1);
-            TCC1.CCB = rx.getData(2);
+
             break;
-        }
-        case 0x2:
-        {
-            selectAnimation(rx.getData(1));
-            break;
-        }
-        case 0x3:
-        {
-            runAnimation = true;
-            break;
-        }
-        case 0x4:
-        {
-            runAnimation = false;
-            break;
-        }
-        case 0x5:
-        {
-            selectAnimation(rx.getData(1));
-            runAnimation = true;
-            break;
-        }
+        
+
 		case 0x06:
 			sendHI();
 			break;
 		
         case 0x58: // Ascii X
-        {
+        
             // Your extended protocol goes here
             break;
-        }
+        
+		case 0x80:	
+
+			//swap buffers
+			ptr16 = currentAnimation;
+			currentAnimation = nextAnimation;
+			nextAnimation = ptr16;
+			
+			resetPC();
+			break;
+
+		case 0x81:
+			
+			uint8_t offset = rx.getData(1);
+			ptr8 = rx.getFrameData() + 2;
+			
+			for(int i = 0; i < rx.getFrameDataLength() - 2; i++)
+			{
+				nextAnimation[i + offset]  = ptr8[i * 2] << 8;
+				nextAnimation[i + offset] += ptr8[(i * 2) + 1];
+			}
+			break;
+
+
     }
 }
 
