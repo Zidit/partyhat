@@ -31,7 +31,6 @@ ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 void test_debug();
 
 void gammaCorrection(led& currentLed);
-void processData(char* data, uint8_t len);
 void xbee_api_callback(ZBRxResponse rx);
 
 
@@ -176,42 +175,6 @@ void gammaCorrection(led& currentLed)
         currentLed.b = gamma256to256(currentLed.b);
 }
 
-
-void processData(char* data, uint8_t len)
-{
-
-    //No data, shouldn't happen
-    if(!len) return;
-
-    switch (data[0])
-    {
-
-    //echo
-    case 0x00:
-        for (uint8_t i = 1; i < len; i++)
-            debug.sendChar(data[i]);
-        break;
-
-    //Set animation
-    case 0x01:
-        selectAnimation(data[1]);
-        break;
-
-    //set vectors manualy
-    case 0x02:
-
-        break;
-
-
-    case 0xFF:
-        userImplementationCommunication(data + 1, len - 1);
-        break;
-
-    default:
-        break;
-    }
-
-}
 
 void sendHI()
 {
