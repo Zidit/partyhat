@@ -64,7 +64,7 @@ int operandToOpcode(std::string str, int &args)
 	if(str == "SIWZ") return OPCODE_SIWZ;
 	if(str == "SICZ") return OPCODE_SICZ;
 	if(str == "RET") return OPCODE_RET;
-
+	if(str == "UDW") return OPCODE_UPDATE_WREG;
 	
 	args = 1;
 	if(str == "LDC") return OPCODE_LOAD_CONST;
@@ -84,7 +84,6 @@ int operandToOpcode(std::string str, int &args)
 	if(str == "DEC") return OPCODE_DEC;
 	if(str == "SR") return OPCODE_SHIFT_R;
 	if(str == "SL") return OPCODE_SHIFT_L;
-	if(str == "UDW") return OPCODE_UPDATE_WREG;
 	if(str == "UDC") return OPCODE_UPDATE_CONST;
 	if(str == "SIRZ") return OPCODE_SIRZ;
 	if(str == "JIWZ") return OPCODE_JIWZ;
@@ -404,18 +403,15 @@ int main ( int argc, const char* argv[] )
 		if(!strcmp(argv[1], "-r"))
 		{
 			std::vector<unsigned char> data;
-			data.push_back(instructions.size()*2);
+			//data.push_back(instructions.size()*2);
 
 			for(int i = 0; i < instructions.size(); i++)
 			{	
-				data.push_back((unsigned char)instructions[i]);
 				data.push_back((unsigned char)(instructions[i] >> 8));			
+				data.push_back((unsigned char)instructions[i]);
+
 			}
 			
-			/*for(auto it : data)
-			{
-				cout << it << " ";
-			}*/
 			fwrite(data.data(),1, data.size(), stdout);
 		}	
 	}

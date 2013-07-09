@@ -152,23 +152,32 @@ INC vec4.d
 INC vec5.d
 INC vec6.d
 INC vec7.d
+INC vec0.d
+INC vec1.d
+INC vec2.d
+INC vec3.d
+INC vec4.d
+INC vec5.d
+INC vec6.d
+INC vec7.d
+
 
 UDC 2
 JMP loop
 
 
 :randColor
-LDC 0x07
+LDC 0x0F
 AND:W random
 ADD:R indirectData
 INC indirectAddress
 
-LDC 0x07
+LDC 0x0F
 AND:W random
 ADD:R indirectData
 INC indirectAddress
 
-LDC 0x07
+LDC 0x0F
 AND:W random
 ADD:R indirectData
 

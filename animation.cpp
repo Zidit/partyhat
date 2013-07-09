@@ -34,7 +34,7 @@ void ramStore (const uint8_t addr, const uint8_t data)
 	{
 		returnAddress = data;
 	}
-	else if (addr < 63)
+	else if (addr < 64)
 	{
 		//Reserved to later use
 	} 
@@ -79,7 +79,7 @@ uint8_t ramLoad (const uint8_t addr)
 	{
 		return returnAddress;
 	}
-	else if (addr < 63)
+	else if (addr < 64)
 	{
 		//Reserved to later use
 		return 0;
@@ -174,6 +174,7 @@ uint8_t runAnimationCode(uint16_t* code)
 		case OPCODE_INC:
 			tmp8 = ramLoad(data);
 			if (tmp8 == 0xFF) carry = 1;
+			else carry = 0;
 			tmp8++;
 			ramStore(data, tmp8);
 			break;
@@ -181,6 +182,7 @@ uint8_t runAnimationCode(uint16_t* code)
 		case OPCODE_DEC:
 			tmp8 = ramLoad(data);
 			if (tmp8 == 0x00) carry = 1;
+			else carry = 0;			
 			tmp8--;
 			ramStore(data, tmp8);
 			break;

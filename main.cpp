@@ -31,7 +31,7 @@ uint16_t animationBuffer1[256] = { 0x1801, 0x0107, 0x0304, 0x0309, 0x030e, 0x010
 									0x0308, 0x01ab, 0x030d, 0x01ff, 0x0300, 0x0307, 0x030b, 0x0101, 
 									0x0403, 0x0408, 0x040d, 0x1102, 0x170f};
 
-uint16_t animationBuffer2[256];
+uint16_t animationBuffer2[256] = { 0x1801, 0x0140, 0x0303, 0x01c0, 0x0308, 0x0106, 0x0304, 0x0309, 0x0105, 0x0340, 0x0100, 0x0300, 0x01ff, 0x0307, 0x1101, 0x0240, 0x0400, 0x01ff, 0x8840, 0x0341, 0x0101, 0x8441, 0x0407, 0x0180, 0x1c40, 0x171e, 0x0106, 0x1b00, 0x170e, 0x1722, 0x01f9, 0x1c00, 0x170e, 0x1722, 0x01ff, 0x0840, 0x0101, 0x0440, 0x170e};
 
 uint16_t* currentAnimation = animationBuffer1;
 uint16_t* nextAnimation = animationBuffer2;
@@ -40,7 +40,7 @@ vec vectors[NUMBER_OF_VECTORS];
 
 void test_debug();
 void gammaCorrection(led& currentLed);
-void xbee_api_callback(ZBRxResponse rx);
+void xbee_api_callback(ZBRxResponse &rx);
 
 XBee xbee = XBee();
 XBeeResponse response = XBeeResponse();
@@ -146,33 +146,31 @@ void gammaCorrection(led& currentLed)
         currentLed.b = gamma256to256(currentLed.b);
 }
 
-
-void sendHI()
+void xbeeEcho(ZBRxResponse &rx)
 {
-		// Create an array for holding the data you want to send.
-	uint8_t payload[] = "Hello World!";
 
-	// Specify the address of the remote XBee (this is the SH + SL)
-	XBeeAddress64 addr64 = XBeeAddress64(0x0013a200, 0x4089EDE8);
+	XBeeAddress64 address =  rx.getRemoteAddress64();
 
 	// Create a TX Request
-	ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload));
+	ZBTxRequest zbTx = ZBTxRequest(address, rx.getData(), rx.getDataLength());
 
 	// Send your request
-	xbee.send(zbTx);
+	xbee.send(zbTx);  
 }
 
-void xbee_api_callback(ZBRxResponse rx)
+
+void xbee_api_callback(ZBRxResponse &rx)
 {
 	uint16_t* ptr16;
 	uint8_t* ptr8;
+	uint16_t k,i;
+	uint8_t offset;
 
     // Check first byte
-    debug.sendHex(rx.getData(0));
     switch(rx.getData(0))
     {
         // TODO: Define a sane baseline protocol, for testing we have this dummy RGB setter
-        case 0x0:
+        case 0x00:
   
             debug.sendHex(rx.getData(1));
             debug.sendHex(rx.getData(2));
@@ -181,22 +179,18 @@ void xbee_api_callback(ZBRxResponse rx)
             break;
  
         case 0x1:
-        
-				resetPC();
-
-
+   
             break;
         
-
-		case 0x06:
-			sendHI();
-			break;
-		
         case 0x58: // Ascii X
         
             // Your extended protocol goes here
             break;
         
+		case 0x70: 
+			xbeeEcho(rx);
+            break;  
+    
 		case 0x80:	
 
 			//swap buffers
@@ -208,14 +202,29 @@ void xbee_api_callback(ZBRxResponse rx)
 			break;
 
 		case 0x81:
-			
-			uint8_t offset = rx.getData(1);
-			ptr8 = rx.getFrameData() + 2;
-			
-			for(int i = 0; i < rx.getFrameDataLength() - 2; i++)
+		
+			offset = rx.getData(1) * 32;
+			ptr8 = rx.getData() + 2;
+			i = 0;
+			k = 0;
+			while(i < rx.getDataLength() - 2)
 			{
-				nextAnimation[i + offset]  = ptr8[i * 2] << 8;
-				nextAnimation[i + offset] += ptr8[(i * 2) + 1];
+				uint16_t val = ptr8[i++];
+				val <<= 8;
+				val += (uint16_t)ptr8[i++] & 0x00FF;
+
+				nextAnimation[k + offset] = val;					
+				k++;
+			}
+
+			break;
+	
+		case 0x82:
+			
+			for(i = 0; i < 256; i++)
+			{			
+				debug.sendHex(nextAnimation[i]);
+				debug.sendChar(' ');		
 			}
 			break;
 
