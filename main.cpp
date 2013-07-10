@@ -166,6 +166,7 @@ void xbee_api_callback(ZBRxResponse &rx)
 	uint16_t k,i;
 	uint8_t offset;
 
+
     // Check first byte
     switch(rx.getData(0))
     {

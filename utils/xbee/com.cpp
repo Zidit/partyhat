@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <iomanip>
+#include <inttypes.h>
 
 
 std::fstream serial;
@@ -150,6 +151,7 @@ int main ( int argc, const char* argv[] )
 {
 	std::string port = "/dev/ttyUSB0";
 	uint64_t address = 0;
+	bool onlyAnimationChange = false;
 
 	for(int i = 1; i < argc; i++)
 	{
@@ -175,6 +177,10 @@ int main ( int argc, const char* argv[] )
 			}
 			address = std::stol(argv[i],0,0);
 		}
+		if(!strcmp(argv[i], "-c"))
+		{
+			onlyAnimationChange = true;
+		}
 	}
 
 
@@ -191,17 +197,18 @@ int main ( int argc, const char* argv[] )
 		in.push_back(std::cin.get());
 
 
-	sendAnimation(in, address);
+	if (!onlyAnimationChange)
+		sendAnimation(in, address);
 
 	std::vector<uint8_t> rxdata;
 	sendCommand(0x80, address, rxdata);
 	sendCommand(0x82, address, rxdata);
 
-	char c[33];
-	serial.read(c, 32);
+	//char c[33];
+	//serial.read(c, 32);
 
 	//std::string ss(c);
-	std::cout << c;
+	//std::cout << c;
 	
 	return 0;
 }

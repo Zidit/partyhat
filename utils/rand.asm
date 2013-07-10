@@ -80,8 +80,10 @@ STR vec6.d
 LDC 96
 STR vec7.d
 
-LDC 32
+
+LDC 67
 STR random ;set random seed
+LDR random
 
 :loop
 
@@ -91,6 +93,8 @@ LDC vec0.r
 STR indirectAddress
 JMP randColor
 :ret0
+
+
 
 LDC ret1
 STR returnAddress
@@ -167,10 +171,6 @@ JMP loop
 
 
 :randColor
-LDC 0x0F
-AND:W random
-ADD:R indirectData
-INC indirectAddress
 
 LDC 0x0F
 AND:W random
@@ -180,8 +180,13 @@ INC indirectAddress
 LDC 0x0F
 AND:W random
 ADD:R indirectData
+INC indirectAddress
+
+LDC 0x0F
+AND:W random
+ADD:R indirectData
+
 
 RET
-
 
 

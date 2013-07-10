@@ -323,10 +323,12 @@ int main ( int argc, const char* argv[] )
 	{
 		if(!strcmp(argv[1], "-a"))
 		{
+			int ln = 0;
 			for( auto it : code)
 			{
 				line = it[0] + " " + it[1];
-				cout << line << "\n";
+				cout << ln << "; " << line << "\n";
+				ln++;
 			}
 			return 0;
 		}
