@@ -19,11 +19,11 @@
 #include "XBee.h"
 
 
-uart xbeeSerial(&USARTD0, 9600);
+uart xbeeSerial(&USARTD0, 115200);
 ISR (USARTD0_RXC_vect){ xbeeSerial.rxInterrupt(); }
 ISR (USARTD0_DRE_vect){ xbeeSerial.txInterrupt(); }
 
-uart debug(&USARTC1, 9600);
+uart debug(&USARTC1, 115200);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
@@ -166,7 +166,6 @@ void xbee_api_callback(ZBRxResponse &rx)
 	uint16_t k,i;
 	uint8_t offset;
 
-
     // Check first byte
     switch(rx.getData(0))
     {
@@ -216,19 +215,24 @@ void xbee_api_callback(ZBRxResponse &rx)
 
 				nextAnimation[k + offset] = val;					
 				k++;
-			}
-
+			}		
 			break;
 	
 		case 0x82:
 			
 			for(i = 0; i < 256; i++)
 			{			
-				debug.sendHex(nextAnimation[i]);
+				debug.sendHex(currentAnimation[i]);
 				debug.sendChar(' ');		
 			}
 			break;
-
+		case 0x83:
+			
+			for(i = 0; i < 256; i++)
+			{			
+				nextAnimation[i] = 0;	
+			}
+			break;
 
     }
 }

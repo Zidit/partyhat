@@ -61,7 +61,7 @@ void uart::sendChar(const char c)
 	txBuffer.write(c);
 
 	//Enable interrupt for sending data
-	reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_MED_gc;
+	reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_HI_gc;
 }
 
 void uart::sendString(const char *str)
@@ -87,7 +87,7 @@ uint8_t uart::sendStringNonBlocking(const char *str)
         if(txBuffer.isFull()) return charsSent;
         txBuffer.write(*str++);
         charsSent++;
-        reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_MED_gc;
+        reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_HI_gc;
     }
 
     return charsSent;
@@ -102,7 +102,7 @@ uint8_t uart::sendStringPgmNonBlocking(const char *str)
         if(txBuffer.isFull()) return charsSent;
         txBuffer.write(pgm_read_byte(str++));
         charsSent++;
-        reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_MED_gc;
+        reg->CTRLA = USART_RXCINTLVL_HI_gc | USART_DREINTLVL_HI_gc;
     }
 
     return charsSent;

@@ -96,6 +96,7 @@ std::vector<uint8_t> buildTransmitRequest(std::vector<uint8_t> &data, uint64_t a
 
 void sendCommand(uint8_t command, uint64_t address64, std::vector<uint8_t> &payload)
 {
+		static uint8_t num = 0;
 
 		std::vector<uint8_t> d;
 		d.push_back(command);
@@ -106,7 +107,7 @@ void sendCommand(uint8_t command, uint64_t address64, std::vector<uint8_t> &payl
 		}
 
 
-		std::vector<uint8_t> rxdata = buildTransmitRequest(d, address64 , 0x00);
+		std::vector<uint8_t> rxdata = buildTransmitRequest(d, address64 , num++);
 
 		for (auto it = rxdata.begin(); it < rxdata.end(); it++)
 		{
@@ -140,6 +141,7 @@ void sendAnimation(std::vector<uint8_t> &data, uint64_t address64)
 		offset++;
 		if(64 * offset > data.size()) break;
 	}
+
 
 }
 
@@ -191,7 +193,10 @@ int main ( int argc, const char* argv[] )
 		return 1;	
 	}
 
+	std::vector<uint8_t> rxdata;
 	std::vector<uint8_t> in;	
+
+	sendCommand(0x83, address, rxdata);
 
 	while(std::cin.good())
 		in.push_back(std::cin.get());
@@ -200,7 +205,6 @@ int main ( int argc, const char* argv[] )
 	if (!onlyAnimationChange)
 		sendAnimation(in, address);
 
-	std::vector<uint8_t> rxdata;
 	sendCommand(0x80, address, rxdata);
 	sendCommand(0x82, address, rxdata);
 

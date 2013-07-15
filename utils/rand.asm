@@ -83,7 +83,7 @@ STR vec7.d
 
 LDC 67
 STR random ;set random seed
-LDR random
+
 
 :loop
 
@@ -148,6 +148,7 @@ JMP randColor
 
 
 
+
 INC vec0.d
 INC vec1.d
 INC vec2.d
@@ -172,17 +173,17 @@ JMP loop
 
 :randColor
 
-LDC 0x0F
+LDC 0x03
 AND:W random
 ADD:R indirectData
 INC indirectAddress
 
-LDC 0x0F
+LDC 0x03
 AND:W random
 ADD:R indirectData
 INC indirectAddress
 
-LDC 0x0F
+LDC 0x03
 AND:W random
 ADD:R indirectData
 

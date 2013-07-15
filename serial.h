@@ -54,7 +54,7 @@ public:
 
 private:
     circularBuffer<char, 128> rxBuffer;
-    circularBuffer<char, 128> txBuffer;
+    circularBuffer<char, 64> txBuffer;
 
     USART_t * const reg;
 
