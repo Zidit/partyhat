@@ -38,6 +38,10 @@ Else the sector is power of two of the value to both side of the vectors directi
 of 2. 2 will give 8 and so on. Value of 7 will give full sector if 256, so led in same direction as vector will be full
 bright and brgihtness will fade to zero on other side.
 
+## Hat specific code
+Code for initializing and updating leds is specific to each hat and it must be writen to implementation.cpp. Or
+you can just rename reference code.
+
 
 
 
