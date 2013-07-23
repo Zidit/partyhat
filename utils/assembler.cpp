@@ -43,6 +43,7 @@ using namespace std;
 #define OPCODE_SIWB			0x1B
 #define OPCODE_SIWS			0x1C
 #define OPCODE_RET			0x1D
+#define OPCODE_DEBUG		0x1E
 
 typedef struct {
 	std::string name;
@@ -94,6 +95,8 @@ int operandToOpcode(std::string str, int &args)
 	if(str == "SIWE") return OPCODE_SIWE;
 	if(str == "SIWB") return OPCODE_SIWB;
 	if(str == "SIWS") return OPCODE_SIWS;
+	if(str == "DEBUG") return OPCODE_DEBUG;
+
 
 	throw string("Instruction not found");
 	return 0;

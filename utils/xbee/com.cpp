@@ -137,7 +137,6 @@ void sendAnimation(std::vector<uint8_t> &data, uint64_t address64)
 
 		sendCommand(0x81, address64, d);
 		sleep(1);
-
 		offset++;
 		if(64 * offset > data.size()) break;
 	}

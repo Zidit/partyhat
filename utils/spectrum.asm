@@ -34,9 +34,11 @@ STR vec1.b
 STR vec2.g
 
 :loop
-LDC 1
+LDC 2
 ADD:R vec0.d
+LDC 4
 ADD:R vec1.d
+LDC 6
 ADD:R vec2.d
 
 UDC 2

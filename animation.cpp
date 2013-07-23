@@ -1,10 +1,12 @@
 
 #include "animation.h"
 #include "battery.h"
+#include "serial.h"
+#include "config.h"
 #include <stdlib.h>
 
 
-uint8_t gp_ram[64];
+uint8_t gp_ram[128];
 uint8_t indirectAddress = 0;
 uint8_t PC;
 uint8_t returnAddress = 0;
@@ -38,10 +40,10 @@ void ramStore (const uint8_t addr, const uint8_t data)
 	{
 		//Reserved to later use
 	} 
-	else if (addr < 128)
+	else if (addr > 127)
 	{
 		//general purpose memory
-		gp_ram[addr - 64] = data;
+		gp_ram[addr - 128] = data;
 	}
 
 }
@@ -84,10 +86,10 @@ uint8_t ramLoad (const uint8_t addr)
 		//Reserved to later use
 		return 0;
 	} 
-	else if (addr < 128)
+	else if (addr > 127)
 	{
 		//general purpose memory
-		return gp_ram[addr - 64];
+		return gp_ram[addr - 128];
 	}
 
 	return 0;
@@ -189,14 +191,12 @@ uint8_t runAnimationCode(uint16_t* code)
 
 		case OPCODE_SHIFT_R:
 			carry = wreg & 0x01;
-			wreg >>= 1;
-			if(data) wreg |= 0x80;			
+			wreg >>= data;		
 			break;
 
 		case OPCODE_SHIFT_L:
 			carry = (wreg >> 7) & 0x01;
-			wreg <<= 1;
-			if(data) wreg |= 0x01;
+			wreg <<= data;
 			break;
 
 		case OPCODE_UPDATE_WREG:
@@ -256,6 +256,11 @@ uint8_t runAnimationCode(uint16_t* code)
 
 		case OPCODE_RET:
 			PC = returnAddress;
+			break;
+
+		case OPCODE_DEBUG:
+			debug.sendHex(ramLoad(data));
+			debug.sendString("\r\n");
 			break;
 
 		default:

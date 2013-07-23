@@ -33,6 +33,7 @@
 #define OPCODE_SIWB			0x1B
 #define OPCODE_SIWS			0x1C
 #define OPCODE_RET			0x1D
+#define OPCODE_DEBUG		0x1E
 
 
 void resetPC();

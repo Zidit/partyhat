@@ -50,6 +50,16 @@
 #define indirectAddress 40
 #define indirectData 41
 #define returnAddress 45
+#define battery_upper 0x2B
+#define battery_lower 0x2C
+
+#define ram_color_r 0x80
+#define ram_color_g 0x81
+#define ram_color_b 0x82
+#define ram_bat_lvl 0x83
+#define ram_tmp 0x84
+
+
 
 RST 1
 LDC 5
@@ -71,123 +81,88 @@ LDC -64
 STR vec2.d
 LDC -96
 STR vec3.d
-LDC -128
+LDC -127
 STR vec4.d
-LDC 32
+LDC 96
 STR vec5.d
 LDC 64
 STR vec6.d
-LDC 96
+LDC 32
 STR vec7.d
 
 
-LDC 67
-STR random ;set random seed
+LDC 23
+STR random
 
 
 :loop
 
-LDC ret0
-STR returnAddress
-LDC vec0.r
-STR indirectAddress
-JMP randColor
-:ret0
+
+LDR battery_lower
+SR 5
+STR ram_bat_lvl
+
+LDC 0x1F
+AND:W battery_upper
+SL 3
+OR:R ram_bat_lvl
+
+;DEBUG battery_upper
+;DEBUG battery_lower
+DEBUG ram_bat_lvl
+
+LDC 0
+STR ram_color_r
+STR ram_color_g
+STR ram_color_b
+STR vec6.b
+
+:skip
 
 
-
-LDC ret1
-STR returnAddress
-LDC vec1.r
-STR indirectAddress
-JMP randColor
-:ret1
-
-LDC ret2
-STR returnAddress
-LDC vec2.r
-STR indirectAddress
-JMP randColor
-:ret2
-
-LDC ret3
-STR returnAddress
-LDC vec3.r
-STR indirectAddress
-JMP randColor
-:ret3
-
-LDC ret4
-STR returnAddress
-LDC vec4.r
-STR indirectAddress
-JMP randColor
-:ret4
-
-LDC ret5
-STR returnAddress
-LDC vec5.r
-STR indirectAddress
-JMP randColor
-:ret5
-
-LDC ret6
-STR returnAddress
-LDC vec6.r
-STR indirectAddress
-JMP randColor
-:ret6
-
-LDC ret7
-STR returnAddress
-LDC vec7.r
-STR indirectAddress
-JMP randColor
-:ret7
+LDC 0
+STR vec0.r
+STR vec1.r
+STR vec0.g
+STR vec1.g
+STR vec0.b
+STR vec1.b
 
 
 
 
+LDC 0x6E
+SIWB ram_bat_lvl
+JMP hi
 
-INC vec0.d
-INC vec1.d
-INC vec2.d
-INC vec3.d
-INC vec4.d
-INC vec5.d
-INC vec6.d
-INC vec7.d
-INC vec0.d
-INC vec1.d
-INC vec2.d
-INC vec3.d
-INC vec4.d
-INC vec5.d
-INC vec6.d
-INC vec7.d
+LDC 200
+STR ram_color_r
+JMP skip3
+
+:hi
+LDC 200
+STR ram_color_g
+
+:skip3
 
 
-UDC 2
+LDR ram_color_r
+STR vec0.r
+STR vec1.r
+
+
+LDR ram_color_b
+STR vec0.b
+STR vec1.b
+
+LDR ram_color_g
+STR vec0.g
+STR vec1.g
+
+
+
+
+UDC 5
 JMP loop
-
-
-:randColor
-
-LDC 0x07
-AND:W random
-ADD:R indirectData
-INC indirectAddress
-
-LDC 0x03
-AND:W random
-ADD:R indirectData
-INC indirectAddress
-
-LDC 0x07
-AND:W random
-ADD:R indirectData
-
-
-RET
 
 
