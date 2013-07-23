@@ -7,13 +7,13 @@ This version won't work with orginal firmware.
 
 ## Why alternative version
 Orginal partyhat version has one flaw. It doesn't scale well with large ammounts of
-led. This verion is will work any number of leds. It is tested succesfuly with 52 leds.
+led. This verion is will work any number of leds. It is [tested](http://www.youtube.com/watch?v=SGMewqFb5E4) succesfuly with 52 leds.
 Programming gives also easier accsess to different module. All data (time, battery level,
 sound level, etc.) can be palaced to "memory", where it can be used on animation program.
 
 
 ## Programing animations
-Animations are programmed dynamicly to hats with assembly like language. Code has 26 basic instucion,
+Animations are programmed dynamicly to hats with PAssembly (Party assembly). PAssembly has 26 basic instucion,
 one working register (same as pic microcontrollers), 256 bytes "ram", indirect addresssing,
 max code size of 256 instructions and carry bit.
 

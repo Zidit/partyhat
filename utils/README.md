@@ -1,9 +1,9 @@
-Party asm
+PAssembly
 ========
 
 ## Instructions
 
-Party asm commands consist instruction and zero to one argument. Argument is always value between 0 - 0xFF.
+PAssembly commands consist instruction and zero to one argument. Argument is always value between 0 - 0xFF.
 It can be constant value or address depending on instruction. Some insturctions can also have :R or :W 
 versions. :R means that result of the insturuction is writen back to memory and :W means that it is
 writen to wreg.
