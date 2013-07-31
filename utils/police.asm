@@ -9,8 +9,8 @@
 #define vec1.d 0x08
 #define vec1.s 0x09
 
-#define r1 0x40
-#define r2 0x41
+#define r1 0x80
+#define r2 0x81
 
 RST 1
 LDC 64
