@@ -20,20 +20,27 @@ const uint16_t anim_spectrum[] PROGMEM = { 0x1801, 0x0107, 0x0304, 0x0309, 0x030
 
 const uint16_t anim_police[] PROGMEM = { 0x1801, 0x0140, 0x0303, 0x01c0, 0x0308, 0x0106, 0x0304, 0x0309, 0x0105, 0x0380, 0x0100, 0x0300, 0x01ff, 0x0307, 0x1101, 0x0280, 0x0400, 0x01ff, 0x8880, 0x0381, 0x0101, 0x8481, 0x0407, 0x0180, 0x1c80, 0x171e, 0x0106, 0x1b00, 0x170e, 0x1722, 0x01f9, 0x1c00, 0x170e, 0x1722, 0x01ff, 0x0880, 0x0101, 0x0480, 0x170e};
 
-const uint16_t anim_epy2[]PROGMEM  = { 0x1801, 0x0107, 0x0304, 0x0309, 0x0100, 0x0303, 0x0180, 0x0308, 0x0143, 0x032a, 0x022a, 0x0300, 0x0301, 0x0302, 0x0305, 0x0306, 0x0307, 0x110a, 0x170a};
+const uint16_t anim_epy2[] PROGMEM  = { 0x1801, 0x0107, 0x0304, 0x0309, 0x0100, 0x0303, 0x0180, 0x0308, 0x0143, 0x032a, 0x022a, 0x0300, 0x0301, 0x0302, 0x0305, 0x0306, 0x0307, 0x110a, 0x170a};
+
+const uint16_t anim_off[] PROGMEM = { 0x1801, 0x110a, 0x1701};
+
+const uint16_t anim_light [] PROGMEM = { 0x1801, 0x0140, 0x0303, 0x01c0, 0x0308, 0x0107, 0x0304, 0x0309, 0x01ff, 0x0300, 0x0301, 0x0302, 0x0305, 0x0306, 0x0307, 0x110a, 0x170f};
+
 
 
 void loadNextAnimation(uint16_t* target)
 {
 		static uint8_t pgm_animation = 0;
 		if(pgm_animation == 0) memcpy_P(target, anim_rand, 98 * sizeof(uint16_t));
-		if(pgm_animation == 1) memcpy_P(target, anim_epy, 38 * sizeof(uint16_t));
-		if(pgm_animation == 2) memcpy_P(target, anim_spectrum, 23 * sizeof(uint16_t));	
-		if(pgm_animation == 3) memcpy_P(target, anim_police, 39 * sizeof(uint16_t));	
-		if(pgm_animation == 4) memcpy_P(target, anim_epy2, 19 * sizeof(uint16_t));
+		else if(pgm_animation == 1) memcpy_P(target, anim_epy, 38 * sizeof(uint16_t));
+		else if(pgm_animation == 2) memcpy_P(target, anim_spectrum, 23 * sizeof(uint16_t));	
+		else if(pgm_animation == 3) memcpy_P(target, anim_police, 39 * sizeof(uint16_t));	
+		else if(pgm_animation == 4) memcpy_P(target, anim_epy2, 19 * sizeof(uint16_t));
+		else if(pgm_animation == 5) memcpy_P(target, anim_light, 17 * sizeof(uint16_t));	
+		else if(pgm_animation == 6) memcpy_P(target, anim_off, 3 * sizeof(uint16_t));
 
 		pgm_animation++;
-		if(pgm_animation == 5) pgm_animation = 0;
+		if(pgm_animation == 7) pgm_animation = 0;
 }
 
 #endif //INCLUDE_PGM_ANIMATIONS
