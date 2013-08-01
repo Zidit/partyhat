@@ -18,6 +18,11 @@
 #include "arduinowrapper.h"
 #include "XBee.h"
 
+#include "button.h"
+#include "pgm_animations.h"
+
+button b_change_animation(&PORTA, PIN2);
+
 
 uart xbeeSerial(&USARTD0, 115200);
 ISR (USARTD0_RXC_vect){ xbeeSerial.rxInterrupt(); }
@@ -27,11 +32,9 @@ uart debug(&USARTC1, 115200);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
-uint16_t animationBuffer1[256] = { 0x1801, 0x0107, 0x0304, 0x0309, 0x030e, 0x0100, 0x0303, 0x0155, 
-									0x0308, 0x01ab, 0x030d, 0x01ff, 0x0300, 0x0307, 0x030b, 0x0101, 
-									0x0403, 0x0408, 0x040d, 0x1102, 0x170f};
+uint16_t animationBuffer1[256];
 
-uint16_t animationBuffer2[256] = { 0x1801, 0x0140, 0x0303, 0x01c0, 0x0308, 0x0106, 0x0304, 0x0309, 0x0105, 0x0340, 0x0100, 0x0300, 0x01ff, 0x0307, 0x1101, 0x0240, 0x0400, 0x01ff, 0x8840, 0x0341, 0x0101, 0x8441, 0x0407, 0x0180, 0x1c40, 0x171e, 0x0106, 0x1b00, 0x170e, 0x1722, 0x01f9, 0x1c00, 0x170e, 0x1722, 0x01ff, 0x0840, 0x0101, 0x0440, 0x170e};
+uint16_t animationBuffer2[256];
 
 uint16_t* currentAnimation = animationBuffer1;
 uint16_t* nextAnimation = animationBuffer2;
@@ -46,6 +49,8 @@ XBee xbee = XBee();
 XBeeResponse response = XBeeResponse();
 // create reusable response objects for responses we expect to handle
 ZBRxResponse rx = ZBRxResponse();
+
+
 
 int main(void)
 {
@@ -67,7 +72,7 @@ int main(void)
     //taskManager::registerTask(&test_debug, 100, 0);
 
 
-    debug.sendStringPgm(PSTR("Partyhat version 0.1 \n"));
+    debug.sendStringPgm(PSTR("\n\n\nPartyhat version 0.1 \n"));
 
 
     Stream xbeeStream(xbeeSerial);
@@ -77,6 +82,8 @@ int main(void)
     PORTD.OUTCLR = PIN4_bm;
     _delay_ms(20);
     PORTD.OUTSET = PIN4_bm;
+
+	loadPgmAnimation(currentAnimation, anim_spectrum);
 
     uint32_t nextFrame = taskManager::getTimeMs() ;
 
@@ -109,7 +116,22 @@ int main(void)
             }
 
             userImplementationUpdate();
-        }
+
+	}
+
+	if(b_change_animation.isToggled() && b_change_animation.isDown())
+	{
+
+		loadNextAnimation(nextAnimation);
+
+		//swap buffers
+		uint16_t* ptr16;
+		ptr16 = currentAnimation;
+		currentAnimation = nextAnimation;
+		nextAnimation = ptr16;
+	
+		resetPC();		
+	}  
 
 
 
