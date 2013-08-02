@@ -43,6 +43,7 @@ vec vectors[NUMBER_OF_VECTORS];
 
 void test_debug();
 void gammaCorrection(led& currentLed);
+void brightness(led& currentLed, uint8_t value);
 void xbee_api_callback(ZBRxResponse &rx);
 
 XBee xbee = XBee();
@@ -112,6 +113,7 @@ int main(void)
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
                 updateLed(leds[ledIndex], vectors, NUMBER_OF_VECTORS);
+				brightness(leds[ledIndex], 255);
                 gammaCorrection(leds[ledIndex]);
             }
 
@@ -166,6 +168,14 @@ void gammaCorrection(led& currentLed)
         currentLed.r = gamma256to256(currentLed.r);
         currentLed.g = gamma256to256(currentLed.g);
         currentLed.b = gamma256to256(currentLed.b);
+}
+
+void brightness(led& currentLed, uint8_t value)
+{
+        currentLed.r = ((uint16_t)currentLed.r * (uint16_t)value) >> 8;
+        currentLed.g = ((uint16_t)currentLed.g * (uint16_t)value) >> 8;
+        currentLed.b = ((uint16_t)currentLed.b * (uint16_t)value) >> 8;
+
 }
 
 void xbeeEcho(ZBRxResponse &rx)
