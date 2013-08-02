@@ -136,14 +136,11 @@ void sendAnimation(std::vector<uint8_t> &data, uint64_t address64)
 			d.push_back(data[i++]);
 
 		sendCommand(0x81, address64, d);
-		sleep(1);
+		usleep(500000);
 		offset++;
 		if(64 * offset > data.size()) break;
 	}
-
-
 }
-
 
 
 
@@ -151,7 +148,7 @@ void sendAnimation(std::vector<uint8_t> &data, uint64_t address64)
 int main ( int argc, const char* argv[] )
 {
 	std::string port = "/dev/ttyUSB0";
-	uint64_t address = 0;
+	std::vector<uint64_t> address;
 	bool onlyAnimationChange = false;
 
 	for(int i = 1; i < argc; i++)
@@ -176,7 +173,7 @@ int main ( int argc, const char* argv[] )
 				std::cerr << "-a need arguments \n";
 				exit(1);  
 			}
-			address = std::stol(argv[i],0,0);
+			address.push_back(std::stol(argv[i],0,0));
 		}
 		if(!strcmp(argv[i], "-c"))
 		{
@@ -184,7 +181,44 @@ int main ( int argc, const char* argv[] )
 		}
 	}
 
+	if(address.empty()) 
+	{
+		std::ifstream addr_file;
+		addr_file.open ("./addresses.txt");
 
+		std::string line;
+		uint64_t a;
+
+		while(addr_file.good()){
+
+			std::getline(addr_file, line);
+			try 
+			{
+				a = std::stol(line,0,0);
+			}
+			catch(...)
+			{
+				a = 0;
+			}
+
+			if(a) 
+			{		
+				address.push_back(a);
+				std::cout << line << "  " << a << "\n";
+			}
+		}
+
+		addr_file.close();		
+		
+	}
+
+
+	if(address.empty()) 
+	{
+		std::cout << "No address given!\n";
+		exit(1);
+	}
+	
 	serial.open(port.c_str(), std::ios::in | std::ios::out | std::ios::binary);
 	if(!serial.is_open())
 	{
@@ -195,17 +229,20 @@ int main ( int argc, const char* argv[] )
 	std::vector<uint8_t> rxdata;
 	std::vector<uint8_t> in;	
 
-	sendCommand(0x83, address, rxdata);
 
 	while(std::cin.good())
 		in.push_back(std::cin.get());
 
+	for (auto addr : address) 
+	{ 
+		sendCommand(0x83, addr, rxdata);
 
-	if (!onlyAnimationChange)
-		sendAnimation(in, address);
+		if (!onlyAnimationChange)
+			sendAnimation(in, addr);
 
-	sendCommand(0x80, address, rxdata);
-	sendCommand(0x82, address, rxdata);
+		sendCommand(0x80, addr, rxdata);
+		sendCommand(0x82, addr, rxdata);
+	}
 
 	//char c[33];
 	//serial.read(c, 32);
