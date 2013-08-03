@@ -21,14 +21,17 @@
 #include "button.h"
 #include "pgm_animations.h"
 
+#include "animations.h"
+#include "animation_tasks.h"
+
 button b_change_animation(&PORTA, PIN2);
 
 
-uart xbeeSerial(&USARTD0, 115200);
+uart xbeeSerial(&USARTD0, 57600);
 ISR (USARTD0_RXC_vect){ xbeeSerial.rxInterrupt(); }
 ISR (USARTD0_DRE_vect){ xbeeSerial.txInterrupt(); }
 
-uart debug(&USARTC1, 115200);
+uart debug(&USARTC1, 57600);
 ISR (USARTC1_RXC_vect){ debug.rxInterrupt(); }
 ISR (USARTC1_DRE_vect){ debug.txInterrupt(); }
 
@@ -52,6 +55,7 @@ XBeeResponse response = XBeeResponse();
 ZBRxResponse rx = ZBRxResponse();
 
 
+bool helsinkiMode = false;
 
 int main(void)
 {
@@ -88,6 +92,8 @@ int main(void)
 
     uint32_t nextFrame = taskManager::getTimeMs() ;
 
+	load_nth_animation(1);
+	anim_runner.start_animation();
 
     while(1){
 
@@ -108,7 +114,15 @@ int main(void)
         {
             uint32_t time = taskManager::getTimeMs();
 
-			nextFrame = time + 10 * runAnimationCode(currentAnimation);
+			if(!helsinkiMode) 
+			{
+				nextFrame = time + 10 * runAnimationCode(currentAnimation);
+			}
+			else {
+				anim_runner.run(0);
+				nextFrame = anim_runner.getNextRunTime();
+			}
+
 
             for (int ledIndex = 0; ledIndex < number_of_leds; ledIndex++)
             {
@@ -123,6 +137,7 @@ int main(void)
 
 	if(b_change_animation.isToggled() && b_change_animation.isDown())
 	{
+		helsinkiMode = false;
 
 		loadNextAnimation(nextAnimation);
 
@@ -209,7 +224,31 @@ void xbee_api_callback(ZBRxResponse &rx)
             debug.sendHex(rx.getData(3));
 
             break;
- 
+
+        case 0x2:
+        {
+            load_nth_animation(rx.getData(1));
+            break;
+        }
+        case 0x3:
+        {
+			helsinkiMode = true;
+            anim_runner.start_animation();
+            break;
+        }
+        case 0x4:
+        {
+            anim_runner.stop_animation();
+            break;
+        } 
+	    case 0x5:
+        {
+			helsinkiMode = true;
+            load_nth_animation(rx.getData(1));
+            anim_runner.start_animation();
+            break;
+        }
+
         case 0x1:
    
             break;
@@ -224,7 +263,7 @@ void xbee_api_callback(ZBRxResponse &rx)
             break;  
     
 		case 0x80:	
-
+			helsinkiMode = false;
 			//swap buffers
 			ptr16 = currentAnimation;
 			currentAnimation = nextAnimation;
